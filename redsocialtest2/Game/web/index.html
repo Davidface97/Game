@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <style>
+            canvas {
+                border:1px solid #d3d3d3;
+                background-color: #f1f1f1;
+            }
+        </style>
+    </head>
+    <body onload="startGame()">
+        <script>
+
+            var myGamePiece;
+            var myBackground;
+            var myEnemy;
+            var myMisil;
+            var GlobalX;
+            var GlobalY;
+            var GlobalSpeedX;
+            var GlobalSpeedY;
+            function startGame() {
+                myGamePiece = new component(105, 63, "plane.png", 150, 120, "image");
+                myBackground = new component(1550, 500, "fondopix.png", 0, 0, "background");
+                myEnemy = new component(130, 80, "enemy.gif", 800, 420, "enemy");
+                myMisil = new component(130, 80, "misil.png", GlobalX, GlobalY, "misil");
+                myGameArea.start();
+            }
+
+            var myGameArea = {
+                canvas: document.createElement("canvas"),
+                start: function () {
+                    this.canvas.width = 1200;
+                    this.canvas.height = 500;
+                    this.context = this.canvas.getContext("2d");
+                    document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+                    this.frameNo = 0;
+                    this.interval = setInterval(updateGameArea, 20);
+                    window.addEventListener('keydown', function (e) {
+                        e.preventDefault();
+                        myGameArea.keys = (myGameArea.keys || []);
+                        myGameArea.keys[e.keyCode] = (e.type == "keydown");
+                    })
+                    window.addEventListener('keyup', function (e) {
+                        myGameArea.keys[e.keyCode] = (e.type == "keydown");
+                    })
+                },
+                clear: function () {
+                    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                },
+                stop: function () {
+                    clearInterval(this.interval);
+                }
+            }
+
+            function component(width, height, color, x, y, type) {
+                this.type = type;
+                if (type == "image" || type == "background" || type == "enemy" || type == "misil") {
+                    this.image = new Image();
+                    this.image.src = color;
+                }
+                this.width = width;
+                this.height = height;
+                this.speedX = 0;
+                this.speedY = 0;
+                this.x = x;
+                this.y = y;
+                this.update = function () {
+                    ctx = myGameArea.context;
+                    if (type == "image" || type == "background" || type == "enemy" || type == "misil") {
+                        ctx.drawImage(this.image,
+                                this.x,
+                                this.y,
+                                this.width, this.height);
+                        if (type == "background") {
+                            ctx.drawImage(this.image,
+                                    this.x + this.width,
+                                    this.y,
+                                    this.width, this.height);
+                        }
+                    } else {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                    }
+
+                    this.crashWith = function (otherobj) {
+                        var myleft = this.x;
+                        var myright = this.x + (this.width);
+                        var mytop = this.y;
+                        var mybottom = this.y + (this.height);
+                        var otherleft = otherobj.x + 20;
+                        var otherright = otherobj.x + (otherobj.width) + 20;
+                        var othertop = otherobj.y + 20;
+                        var otherbottom = otherobj.y + (otherobj.height) + 20;
+                        var crash = true;
+                        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+                            crash = false;
+                        }
+                        return crash;
+                    }
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.restore();
+                }
+                this.newPos = function () {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.type == "background") {
+                        if (this.x <= -(this.width)) {
+                            this.x = 0;
+                        }
+                    }
+                    if (this.type == "enemy") {
+                        if (this.x < -120) {
+                            this.x = 2000;
+                        }
+                    }
+                }
+                this.newPosMisil = function () {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    GlobalX= this.x;
+                    GlobalY= this.y;
+                    GlobalX += GlobalSpeedX;
+                    GlobalY += GlobalSpeedY;
+                    if (this.type == "background") {
+                        if (this.x <= -(this.width)) {
+                            this.x = 0;
+                        }
+                    }
+                    if (this.type == "enemy") {
+                        if (this.x < -120) {
+                            this.x = 2000;
+                    }
+                    }
+                }
+                this.getPosX = function () {
+                    var posx = this.x;
+                    return posx;
+                }
+                this.getPosY = function () {
+                    var posy = this.y;
+                    return posy;
+                }
+            }
+
+            function updateGameArea() {
+
+                myGameArea.clear();
+                myBackground.speedX = -3;
+                myBackground.newPos();
+                myBackground.update();
+                
+                if (myGameArea.keys && myGameArea.keys[37]) {
+                    myGamePiece.speedX = -1.5;
+                    Mymove();
+                }
+                if (myGameArea.keys && myGameArea.keys[39]) {
+                    myGamePiece.speedX = 1.5;
+                    Mymove();
+                }
+                if (myGameArea.keys && myGameArea.keys[38]) {
+                    myGamePiece.speedY = -2;
+                    Mymove();
+                }
+                if (myGameArea.keys && myGameArea.keys[40]) {
+                    myGamePiece.speedY = 2;
+                    Mymove();
+                }
+                if (myGameArea.keys && myGameArea.keys[32]) {
+                    myMisil = new component(130, 80, "misil.png", GlobalX, GlobalY, "misil");
+                    myMisil.speedX = 2.5;
+                    myMisil.speedY = 2.5;
+                    myMisil.newPos();
+                    myMisil.update();
+
+                }
+                clearmove();
+                myEnemy.speedX = -2.5;
+                myEnemy.newPos();
+                myEnemy.update();
+                myGamePiece.update();
+
+                if (myGamePiece.crashWith(myEnemy)) {
+                    myGamePiece.image.src = "boom.png";
+                    myGameArea.stop();
+
+                    alert("Has Perdido");
+                }
+            }
+
+            function move(dir) {
+                myGamePiece.image.src = "main.gif";
+                if (dir == "up") {
+                    myGamePiece.speedY = -1;
+                }
+                if (dir == "down") {
+                    myGamePiece.speedY = 1;
+                }
+                if (dir == "left") {
+                    myGamePiece.speedX = -1;
+                }
+                if (dir == "right") {
+                    myGamePiece.speedX = 1;
+                }
+
+            }
+
+            function clearmove() {
+                myGamePiece.image.src = "avion.png";
+                myGamePiece.speedX = 0;
+                myGamePiece.speedY = 0;
+            }
+            function Mymove() {
+                myGamePiece.image.src = "movemain.png";
+                myGamePiece.newPos();
+            }
+
+        </script>
+        <div style="text-align:center;width:480px;">
+            <button onmousedown="move('up')" onmouseup="clearmove()" ontouchstart="move('up')">UP</button><br><br>
+            <button onmousedown="move('left')" onmouseup="clearmove()" ontouchstart="move('left')">LEFT</button>
+            <button onmousedown="move('right')" onmouseup="clearmove()" ontouchstart="move('right')">RIGHT</button><br><br>
+            <button onmousedown="move('down')" onmouseup="clearmove()" ontouchstart="move('down')">DOWN</button>
+        </div>
+
+        <p>The background will go on looping forever.</p>
+        <p>You should choose a background which overlaps better than in this example.</p>
+    </body>
+</html>
