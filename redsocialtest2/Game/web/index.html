@@ -2,10 +2,25 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <link href='https://fonts.googleapis.com/css?family=Metal Mania' rel='stylesheet'>
         <style>
+            body{
+                background-color: #ededed;
+            }
             canvas {
                 border:1px solid #d3d3d3;
                 background-color: #f1f1f1;
+            }
+            #result{
+                margin-left: 535px;
+            }
+            #really{
+                margin-left: 560px;
+            }
+            .text{
+                font-family: 'Metal Mania';
+                font-size: 22px;
+                color: #819999;
             }
         </style>
     </head>
@@ -20,11 +35,19 @@
             var GlobalY;
             var GlobalSpeedX;
             var GlobalSpeedY;
+            var Checker = 1;
+            var Score = localStorage.getItem("Score");
+            var GlobalScore;
+            var Vidas = 1;
+            var Misiles = 4;
+            var Tanques = 2;
+            var Floor;
             function startGame() {
                 myGamePiece = new component(105, 63, "plane.png", 150, 120, "image");
                 myBackground = new component(1550, 500, "fondopix.png", 0, 0, "background");
                 myEnemy = new component(130, 80, "enemy.gif", 800, 420, "enemy");
-                myMisil = new component(130, 80, "misil.png", GlobalX, GlobalY, "misil");
+                myMisil = new component(130, 80, "misil.png", 0, 0, "misil");
+                Floor = new component(20, 1200, "boom.png", 570, 0, "misil");
                 myGameArea.start();
             }
 
@@ -66,6 +89,9 @@
                 this.speedY = 0;
                 this.x = x;
                 this.y = y;
+                this.gravity = 0.05;
+                this.gravitySpeed = 0;
+                
                 this.update = function () {
                     ctx = myGameArea.context;
                     if (type == "image" || type == "background" || type == "enemy" || type == "misil") {
@@ -76,6 +102,12 @@
                         if (type == "background") {
                             ctx.drawImage(this.image,
                                     this.x + this.width,
+                                    this.y,
+                                    this.width, this.height);
+                        }
+                        if (type == "misil") {
+                            ctx.drawImage(this.image,
+                                    this.x,
                                     this.y,
                                     this.width, this.height);
                         }
@@ -104,6 +136,7 @@
                     ctx.restore();
                 }
                 this.newPos = function () {
+                    this.gravitySpeed += this.gravity;
                     this.x += this.speedX;
                     this.y += this.speedY;
                     if (this.type == "background") {
@@ -115,33 +148,15 @@
                         if (this.x < -120) {
                             this.x = 2000;
                         }
+                    }
+                    if (this.type == "misil") {
+                        myMisil.x += GlobalSpeedX;
+                        myMisil.y += GlobalSpeedY  + this.gravitySpeed;
                     }
                 }
                 this.newPosMisil = function () {
-                    this.x += this.speedX;
-                    this.y += this.speedY;
-                    GlobalX= this.x;
-                    GlobalY= this.y;
-                    GlobalX += GlobalSpeedX;
-                    GlobalY += GlobalSpeedY;
-                    if (this.type == "background") {
-                        if (this.x <= -(this.width)) {
-                            this.x = 0;
-                        }
-                    }
-                    if (this.type == "enemy") {
-                        if (this.x < -120) {
-                            this.x = 2000;
-                    }
-                    }
-                }
-                this.getPosX = function () {
-                    var posx = this.x;
-                    return posx;
-                }
-                this.getPosY = function () {
-                    var posy = this.y;
-                    return posy;
+                    myMisil.x += myMisil.speedX;
+                    myMisil.y += myMisil.speedY; 
                 }
             }
 
@@ -151,7 +166,7 @@
                 myBackground.speedX = -3;
                 myBackground.newPos();
                 myBackground.update();
-                
+
                 if (myGameArea.keys && myGameArea.keys[37]) {
                     myGamePiece.speedX = -1.5;
                     Mymove();
@@ -168,10 +183,14 @@
                     myGamePiece.speedY = 2;
                     Mymove();
                 }
-                if (myGameArea.keys && myGameArea.keys[32]) {
-                    myMisil = new component(130, 80, "misil.png", GlobalX, GlobalY, "misil");
-                    myMisil.speedX = 2.5;
-                    myMisil.speedY = 2.5;
+                if (myGameArea.keys && myGameArea.keys[87]) {
+                    if (Checker === 1) {
+                        myMisil.x = myGamePiece.x;
+                        myMisil.y = myGamePiece.y;
+                        Checker = 0;
+                    }
+                    GlobalSpeedX = 2;
+                    GlobalSpeedY = 2;
                     myMisil.newPos();
                     myMisil.update();
 
@@ -185,8 +204,28 @@
                 if (myGamePiece.crashWith(myEnemy)) {
                     myGamePiece.image.src = "boom.png";
                     myGameArea.stop();
+                    ScoreCounter('q');
+                    TestigosVidas();
+                    document.getElementById("really").innerHTML = "Pfft Really?";
+                    window.location = "lose.html";
+                }
 
-                    alert("Has Perdido");
+                if (myMisil.crashWith(myEnemy)) {
+                    myMisil.image.src = "boom.png";
+                    myGameArea.stop();
+                    ScoreCounter('ok');
+                    TestigosTanques('ammo3');
+                    TestigosMisiles();
+                    document.getElementById("really").innerHTML = "Hit, Good Job! ✈";
+                    myGameArea.stop();
+                }
+                if (myMisil.crashWith(Floor)) {
+                    myMisil.image.src = "boom.png";
+                    myGameArea.stop();
+                    ScoreCounter('q');
+                    TestigosMisiles();
+                    document.getElementById("really").innerHTML = "Try It Again!";
+                    myGameArea.stop();
                 }
             }
 
@@ -213,19 +252,132 @@
                 myGamePiece.speedY = 0;
             }
             function Mymove() {
-                myGamePiece.image.src = "movemain.png";
+                myGamePiece.image.src = "boom.png";
                 myGamePiece.newPos();
             }
+            function ReLoad() {
+                setTimeout('document.location.reload()', 1000);
+            }
+            function Stop() {
+                myGameArea.stop();
+            }
+            function Puntaje() {
+                document.getElementById("result").innerHTML = "Your Score Is →  " + sessionStorage.Score + ".";
+            }
+            function Ammo() {
+                document.getElementById("ammo2").innerHTML = "Vidas →  " + sessionStorage.TestigosVidas + " " + "| Misiles →  " + sessionStorage.TestigosMisiles + " " + "| Enemigos Restantes → " + sessionStorage.TestigosTanques;
+            }
+            function ReDirect(x) {
+                if (x == 'won') {
+                    window.locationf = "won.html";
+                } else {
+                    window.locationf = "lose.html";
+                }
+            }
+            function TestigosVidas() {
+
+                if (typeof (Storage) !== "undefined") {
+                    if (sessionStorage.TestigosVidas) {
+                        sessionStorage.TestigosVidas = Number(sessionStorage.TestigosVidas) - 1;
+                        if (sessionStorage.TestigosVidas <= 0) {
+                            window.location = "lose.html";
+                        }
+                    } else {
+                        sessionStorage.TestigosVidas = 0;
+                    }
+
+                    document.getElementById("ammo").innerHTML = "Vidas Restantes →  " + sessionStorage.TestigosVidas + ".";
+                } else {
+                    document.getElementById("ammo").innerHTML = "Sorry, your browser does not support web storage ✈ ...";
+                }
+                Vidas = sessionStorage.TestigosVidas;
+
+            }
+            function TestigosMisiles() {
+
+                if (typeof (Storage) !== "undefined") {
+                    if (sessionStorage.TestigosMisiles) {
+                        sessionStorage.TestigosMisiles = Number(sessionStorage.TestigosMisiles) - 1;
+                        if (sessionStorage.TestigosMisiles == 0) {
+                            window.location = "lose.html";
+                        }
+                    } else {
+                        sessionStorage.TestigosMisiles = 3;
+                    }
+
+                    document.getElementById("ammo").innerHTML = "Misiles Restantes →  " + sessionStorage.TestigosMisiles + ".";
+                } else {
+                    document.getElementById("ammo").innerHTML = "Sorry, your browser does not support web storage ✈ ...";
+                }
+                Misiles = sessionStorage.TestigosMisiles;
+
+            }
+            function TestigosTanques(x) {
+
+                if (typeof (Storage) !== "undefined") {
+                    if (sessionStorage.TestigosTanques) {
+                        sessionStorage.TestigosTanques = Number(sessionStorage.TestigosTanques) - 1;
+                        if (sessionStorage.TestigosTanques == 0) {
+                            window.location = "won.html";
+                        }
+                    } else {
+                        sessionStorage.TestigosTanques = 1;
+                    }
+
+                    document.getElementById(x).innerHTML = "Enemigos Restantes →  " + sessionStorage.TestigosTanques + ".";
+                } else {
+                    document.getElementById(x).innerHTML = "Sorry, your browser does not support web storage ✈ ...";
+                }
+                Tanques = sessionStorage.TestigosTanques;
+
+            }
+            function ScoreCounter(symbol) {
+
+                if (typeof (Storage) !== "undefined") {
+                    if (symbol == "ok") {
+                        if (sessionStorage.Score) {
+                            sessionStorage.Score = Number(sessionStorage.Score) + 100;
+                            if (sessionStorage.Score == 200 || sessionStorage.TestigosTanques < 0) {
+                                window.location = "won.html";
+                            }
+                        } else {
+                            sessionStorage.Score = 100;
+                        }
+                    } else {
+                        if (sessionStorage.Score) {
+                            sessionStorage.Score = 0;
+                        } else {
+                            sessionStorage.Score = 0;
+                        }
+                    }
+                    document.getElementById("result").innerHTML = "Your Score Is →  " + sessionStorage.Score + ".";
+                } else {
+                    document.getElementById("result").innerHTML = "Sorry, your browser does not support web storage ✈ ...";
+                }
+                GlobalScore = sessionStorage.Score;
+
+
+
+            }
+
 
         </script>
-        <div style="text-align:center;width:480px;">
-            <button onmousedown="move('up')" onmouseup="clearmove()" ontouchstart="move('up')">UP</button><br><br>
-            <button onmousedown="move('left')" onmouseup="clearmove()" ontouchstart="move('left')">LEFT</button>
-            <button onmousedown="move('right')" onmouseup="clearmove()" ontouchstart="move('right')">RIGHT</button><br><br>
-            <button onmousedown="move('down')" onmouseup="clearmove()" ontouchstart="move('down')">DOWN</button>
-        </div>
 
-        <p>The background will go on looping forever.</p>
-        <p>You should choose a background which overlaps better than in this example.</p>
+        <p><button onmousedown="ReLoad()" style="margin-left: 85px; width: 250px;">Restart ∵</button><button onmousedown="Ammo()" style="margin-left: 50px; width: 200px;">Ammo</button><button onmousedown="Stop()" style="margin-left: 50px; width: 200px;">Stop! ∴</button><button onclick="Puntaje()" type="button" style="margin-left: 50px; width: 200px;">Revelar Puntaje ∷</button></p>
+        <br><br>
+        <div id="ammo2" style="margin-left: 360px"></div><br>
+        <div id="ammo" style="margin-left: 535px"></div><br>
+        <div id="ammo3" style="margin-left: 525px"></div><br>
+        <div id="result" style="border: 1px solid; width: 140px;"></div><br>
+        <div id="really"></div><br>
+
+
+        <p style="margin-left: 280px"><img src="logo.png" width="660" height="218"></p>
+        <p style="margin-left: 410px" class="text">David Felipe Acevedo T. - Carlos Alberto Correa C.</p>
+        <p style="margin-left: 420px; color: #ce6200" class="text">Universidad Sergio Arboleda - Bogota Colombia</p>
+
+
     </body>
+
+
 </html>
