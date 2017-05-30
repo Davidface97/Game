@@ -22,6 +22,37 @@
                 font-size: 22px;
                 color: #819999;
             }
+            .button {
+                border-top: 1px solid #f5b039;
+                background: #ce6400;
+                background: -webkit-gradient(linear, left top, left bottom, from(#ff8c00), to(#ce6400));
+                background: -webkit-linear-gradient(top, #ff8c00, #ce6400);
+                background: -moz-linear-gradient(top, #ff8c00, #ce6400);
+                background: -ms-linear-gradient(top, #ff8c00, #ce6400);
+                background: -o-linear-gradient(top, #ff8c00, #ce6400);
+                padding: 12px 24px;
+                -webkit-border-radius: 8px;
+                -moz-border-radius: 8px;
+                border-radius: 8px;
+                -webkit-box-shadow: rgba(0,0,0,1) 0 1px 0;
+                -moz-box-shadow: rgba(0,0,0,1) 0 1px 0;
+                box-shadow: rgba(0,0,0,1) 0 1px 0;
+                text-shadow: rgba(0,0,0,.4) 0 1px 0;
+                color: #ffffff;
+                font-size: 16px;
+                font-family: 'Metal Mania';
+                text-decoration: none;
+                vertical-align: middle;
+            }
+            .button:hover {
+                border-top-color: #d1780c;
+                background: #d1780c;
+                color: #c7c3c7;
+            }
+            .button:active {
+                border-top-color: #ff8c00;
+                background: #ff8c00;
+            }
         </style>
     </head>
     <body onload="startGame()">
@@ -42,12 +73,13 @@
             var Misiles = 4;
             var Tanques = 2;
             var Floor;
+
             function startGame() {
                 myGamePiece = new component(105, 63, "plane.png", 150, 120, "image");
                 myBackground = new component(1550, 500, "fondopix.png", 0, 0, "background");
                 myEnemy = new component(130, 80, "enemy.gif", 800, 420, "enemy");
                 myMisil = new component(130, 80, "misil.png", 0, 0, "misil");
-                Floor = new component(20, 1200, "boom.png", 570, 0, "misil");
+                Floor = new component(20, 1200, null, 0, 570, "misil");
                 myGameArea.start();
             }
 
@@ -89,9 +121,9 @@
                 this.speedY = 0;
                 this.x = x;
                 this.y = y;
-                this.gravity = 0.05;
+                this.gravity = 0.03;
                 this.gravitySpeed = 0;
-                
+
                 this.update = function () {
                     ctx = myGameArea.context;
                     if (type == "image" || type == "background" || type == "enemy" || type == "misil") {
@@ -151,12 +183,18 @@
                     }
                     if (this.type == "misil") {
                         myMisil.x += GlobalSpeedX;
-                        myMisil.y += GlobalSpeedY  + this.gravitySpeed;
+                        myMisil.y += GlobalSpeedY + this.gravitySpeed;
+                        if (myMisil.y > 600) {
+                            ScoreCounter('q');
+                            TestigosMisiles();
+                            document.getElementById("really").innerHTML = "Try It Again!";
+                            myGameArea.stop();
+                        }
                     }
                 }
                 this.newPosMisil = function () {
                     myMisil.x += myMisil.speedX;
-                    myMisil.y += myMisil.speedY; 
+                    myMisil.y += myMisil.speedY;
                 }
             }
 
@@ -219,14 +257,7 @@
                     document.getElementById("really").innerHTML = "Hit, Good Job! ✈";
                     myGameArea.stop();
                 }
-                if (myMisil.crashWith(Floor)) {
-                    myMisil.image.src = "boom.png";
-                    myGameArea.stop();
-                    ScoreCounter('q');
-                    TestigosMisiles();
-                    document.getElementById("really").innerHTML = "Try It Again!";
-                    myGameArea.stop();
-                }
+
             }
 
             function move(dir) {
@@ -363,7 +394,7 @@
 
         </script>
 
-        <p><button onmousedown="ReLoad()" style="margin-left: 85px; width: 250px;">Restart ∵</button><button onmousedown="Ammo()" style="margin-left: 50px; width: 200px;">Ammo</button><button onmousedown="Stop()" style="margin-left: 50px; width: 200px;">Stop! ∴</button><button onclick="Puntaje()" type="button" style="margin-left: 50px; width: 200px;">Revelar Puntaje ∷</button></p>
+        <p><button onmousedown="ReLoad()" style="margin-left: 85px; width: 250px;" class="button">Restart ∵</button><button onmousedown="Ammo()" style="margin-left: 50px; width: 200px;" class="button">Ammo ⊕</button><button onmousedown="Stop()" style="margin-left: 50px; width: 200px;" class="button">Stop! ∴</button><button onclick="Puntaje()" type="button" style="margin-left: 50px; width: 200px;" class="button">Revelar Puntaje ∷</button></p>
         <br><br>
         <div id="ammo2" style="margin-left: 360px"></div><br>
         <div id="ammo" style="margin-left: 535px"></div><br>
